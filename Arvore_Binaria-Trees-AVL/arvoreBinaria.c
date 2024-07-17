@@ -2,158 +2,220 @@
 #include <stdlib.h>
 
 typedef struct no{
-	int conteudo;
+	int valor;
 	struct no *direita, *esquerda;
 }No;
 
-typedef struct{
-	No *raiz;
-}ArvB;
-
-//-------------- Inserçao ---------------
-void inserirDireita(No *noPai,int valor){
-	if(noPai->direita==NULL){
-		No *novo = (No*)malloc(sizeof(No));
-		novo->conteudo = valor;
-		novo->direita = NULL;
-		novo->esquerda = NULL;
-		noPai->direita = novo;
-	}
-	else{
-		if (valor > noPai->direita->conteudo){
-			inserirDireita(noPai->direita,valor);
-		}else{
-			inserirEsquerda(noPai->direita,valor);
-		}
-	}
-}
-
-
-void inserirEsquerda(No *noPai,int valor){
-	if(noPai->esquerda==NULL){
-		No *novo = (No*)malloc(sizeof(No));
-		novo->conteudo = valor;
-		novo->direita = NULL;
-		novo->esquerda = NULL;
-		noPai->esquerda = novo; 
+No* inserir(No *raiz, int valor){
+	
+	if (raiz == NULL){
+		
+		No *aux = malloc(sizeof(No));
+		aux->valor = valor;
+		aux->esquerda = NULL;
+		aux->direita = NULL;
+		printf("\n\t Valor Inserido\n\n");
+		return aux;
+		
 	}else{
-		if(valor < noPai->esquerda->conteudo){
-			inserirEsquerda(noPai->esquerda,valor);
+		
+		if(valor < raiz->valor){
+			
+			raiz->esquerda = inserir(raiz->esquerda,valor);
+			
 		}else{
-			inserirDireita(noPai->esquerda,valor);
+			raiz->direita = inserir(raiz->direita,valor);
 		}
+		return raiz;
 	}
 	
 }
 
-void inserir(ArvB *arv, int valor){
-	if (arv->raiz == NULL){
-		No *novo = (No*)malloc(sizeof(No));
-		novo->conteudo = valor;
-		novo->direita = NULL;
-		novo->esquerda = NULL;		
-		arv->raiz = novo;
+void imprimir_ordenado(No *raiz){
+	
+	if(raiz){
+		imprimir_ordenado(raiz->esquerda);
+		printf("\t%i",raiz->valor);
+		imprimir_ordenado(raiz->direita);
 	}
-	else{
-		if (valor < arv->raiz->conteudo){
-			inserirEsquerda(arv->raiz,valor);
-		}else{
-			inserirDireita(arv->raiz,valor);
-		}
-	}
+	
 }
-//------------Impressão-------------------------
-void imprimir(No *raiz){
-	if (raiz!=NULL){
-		imprimir(raiz->esquerda);
-		printf("%2d  |  ",raiz->conteudo);
-		imprimir(raiz->direita);
-		
-	}
-}
-//----------busca---------
 
-int buscar(No *raiz, int chave){
-	if (raiz == NULL){
-		return -1;
-	}else{
-		if(raiz->conteudo == chave){
-			return raiz->conteudo;
+No* buscar(No *raiz, int valor){
+	if (raiz){
+		if (raiz->valor == valor){
+			return raiz;
 		}
 		else{
-			if (chave > raiz->conteudo){
-				buscar(raiz->direita, chave);
+			if(valor < raiz->valor){
+				return buscar(raiz->esquerda, valor);
 			}else{
-				buscar(raiz->esquerda, chave);
+				return buscar(raiz->direita, valor);
 			}
 		}
 	}
+	return NULL;
 }
 
+int altura(No *raiz){
+	if (raiz == NULL){
+		return -1;
+	}else{
+		int esq = altura(raiz->esquerda);
+		int dir = altura(raiz->direita);
+		if (esq>dir){
+			return esq +1;
+		}else{
+			return dir +1;
+		}
+	}
+}
+
+int quantidade_nos(No *raiz){
+	return (raiz==NULL)? 0 : 1 + quantidade_nos(raiz->esquerda) + quantidade_nos(raiz->direita); 
+}
+
+int quantidade_folhas(No *raiz){
+	if(raiz==NULL){
+		return 0;
+		
+	}else if(raiz->esquerda == NULL && raiz->direita == NULL){
+		return 1;
+		
+	}else{
+		return quantidade_folhas(raiz->direita) + quantidade_folhas(raiz->esquerda);
+	}
+		
+}
+
+No* remover(No *raiz, int chave){
+	if(raiz==NULL){
+		printf("Valor não encontrado");
+		return NULL;
+	}else{
+		if(raiz->valor == chave){
+			if (raiz->esquerda == NULL && raiz->direita == NULL){
+				free(raiz);
+				return NULL;
+			}else{
+				
+				if (raiz->esquerda != NULL && raiz->direita != NULL){
+					No *aux = raiz->esquerda;
+					while (aux->direita != NULL){
+						aux = aux->direita;
+					}
+					raiz->valor = aux->valor;
+					aux->valor = chave;
+					raiz->esquerda = remover(raiz->esquerda, chave);
+					return raiz;
+				}else{
+					No *aux = (raiz->esquerda != NULL) ? raiz->esquerda : raiz->direita;
+                	free(raiz);
+                	return aux;
+				}
+				
+			}
+		}else{
+			if (chave < raiz->valor){
+				raiz->esquerda = remover(raiz->esquerda,chave);	
+			}else{
+				raiz->direita = remover(raiz->direita,chave);
+			}
+			return raiz;
+		}
+	}
+	
+	
+}
+
+void imprimir_arv(No *raiz, int nivel){
+	int i;
+	if(raiz){
+		imprimir_arv(raiz->direita,nivel+1);
+		printf("\n\n");
+		
+		for(i = 0; i < nivel; i++){
+			printf("\t");
+		}
+		
+		printf("%i",raiz->valor);
+		imprimir_arv(raiz->esquerda,nivel+1);
+	}	
+}
 int main(){
 	
-	int opc, valor,i,retorno;
-	ArvB arvore;
+	int opc,valor;
+	No *retorno,*raiz = NULL;
 	
-	arvore.raiz = NULL;
 	
 	do{
-		for (i = 0; i < 28; i++){
-			printf("%c",196);
-		}
-		printf("\n%c	            	   %c",179,179);
-		printf("\n%c	0 | Sair    	   %c",179,179);
-		printf("\n%c	1 | Inserir 	   %c",179,179);
-		printf("\n%c	2 | Imprimir	   %c",179,179);
-		printf("\n%c	3 | Buscar   	   %c",179,179);
-		printf("\n%c	            	   %c\n",179,179);
-		
-		for (i = 0; i < 28; i++){
-			printf("%c",196);
-		}
-		printf("\nDigite aqui: ");
-		scanf("%i",&opc);
-		fflush(stdin);
-		
 		system("cls");
-		switch(opc){
+		printf("\t                     MENU                  \n\n");	
+		printf("\t|          1 - inserir                   |\n");
+		printf("\t|          2 - imprimir ordenado         |\n");
+		printf("\t|          3 - buscar                    |\n");
+		printf("\t|          4 - remover                   |\n");
+		printf("\t|          5 - quantidade nos            |\n");
+		printf("\t|          6 - altura                    |\n");
+		printf("\t|          7 - quantidade de folhas      |\n");
+		printf("\t|          8 - imprimir em arvore        |\n");
+		printf("\t|          0 - sair                      |\n");
+		
+		scanf("%i",&opc);
+		system("cls");
+		switch (opc){
 			case 1:
-				printf("\nDigite o valor que deseja inserir: ");
+				printf("\tDigite um valor: ");
 				scanf("%i",&valor);
-				fflush(stdin);
 				
-				inserir(&arvore,valor);
+				raiz = inserir(raiz, valor);
 				
-				printf("\nValor Inserido");
+				system("pause");
 				break;
 			case 2:
-				printf("---- Mostrando Arvore Binaria----\n\n");
-				imprimir(arvore.raiz);
+				printf("\t\tIMPRIMINDO\n\n");
+				imprimir_ordenado(raiz);
+				printf("\n\n");
+				system("pause");
 				break;
 			case 3:
-				printf("Qual valor deseja buscar? ");
+				printf("\n\n\tBUSCAR");
+				printf("\n\n\tQual o valor que deseja procurar? ");
 				scanf("%i",&valor);
-				retorno = buscar(arvore.raiz,valor);
-				
-				printf("\n\n ----------Resultado da busca----------\n\n");
-				if (retorno == -1){
-					printf("Valor nao encontrado.");
+				retorno = buscar(raiz,valor);
+				if (retorno){
+					printf("\n\n\tValor encontrado: %i \n\n", retorno->valor);
 				}else{
-						printf("\tValor encontrado: %i",retorno);
+					printf("O valor não foi encontrado");
 				}
+				system("pause");
 				break;
-			default:
-				if (opc!=0){
-					printf("Opcao invalida");	
-				}else{
-					printf("Saindo . . .");
-				}
+			case 4:
+				printf("\n\n\t\tREMOVER");
+				printf("\n\n\tQual o valor que deseja procurar? ");
+				scanf("%i",&valor);
+				remover(raiz,valor);
+				system("pause");
 				break;
-			
+			case 5:
+				printf("\tQuantidade de nos: %i\n\n",quantidade_nos(raiz));
+				system("pause");
+				break;
+			case 6:
+				printf("\tAltura da arvore: %i\n\n",altura(raiz));
+				system("pause");
+				break;
+			case 7:
+				printf("\tQuantidade de folhas: %i\n\n", quantidade_folhas(raiz));
+				system("pause");
+				break;
+			case 8:
+				imprimir_arv(raiz,1);
+				printf("\n\n");
+				system("pause");
+				break;
 		}
-		printf("\n\n\n");
-		system("pause");
-		system("cls");
-	}while(opc!=0);
+	}while(opc != 0);
 	
+	return 0;	
 }
